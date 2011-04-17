@@ -11,6 +11,9 @@
 #include "ofxThreadedImageLoader.h"
 
 //#def _DEBUG 1
+#define	NUM_PARTICLES 1
+//500000
+
 
 class testApp : public ofBaseApp{
 	
@@ -19,6 +22,9 @@ public:
 	//from: http://channel9.msdn.com/coding4fun/articles/Wiimote-Virtual-Reality-Desktop
 	float distanceToLine(ofVec2f point, ofVec2f startLinePoint, ofVec2f endLinePoint, float *lambda);
 	void testPoints(ofVec2f lineStartPoint, ofVec2f lineEndPoint, ofVec2f onLinePoint, ofVec2f freePoint);
+	
+	//from VBO example
+	void initParticles();
 	
 	void setup();
 	void update();
@@ -74,4 +80,13 @@ public:
 	ofxCvGrayscaleImage hueImg;
 	ofxCvGrayscaleImage satImg;
 	ofxCvGrayscaleImage briImg;
+	
+	//from VBO example
+	// particles
+	int			particleCount;
+	ofVec3f		particlePos[NUM_PARTICLES];
+	ofVec3f		particleVel[NUM_PARTICLES];
+	ofColor		particleColor[NUM_PARTICLES];
+	float		particleTime[NUM_PARTICLES];
+	ofVbo		particleVbo;	
 };
