@@ -1,5 +1,38 @@
 #include "testApp.h"
 
+//draw a line between startPoint and endPoint, and see if point is on that line
+float testApp::distanceToLine(ofVec2f point, ofVec2f startPoint, ofVec2f endPoint, float *lambda)
+{
+    ofVec2f rv = endPoint - startPoint;
+    ofVec2f p_ap = point - startPoint;
+	float dot_rv = rv.dot(rv);
+    *lambda = p_ap.dot(rv / dot_rv);
+    ofVec2f distVec = point - (startPoint + *lambda * rv);
+
+	return distVec.length();
+}
+
+//figure out which are three points on line (start, in, end), and which is fourth point
+//"find the 3 image points which are [closest] to form[ing] a line"
+void testApp::testPoints(ofVec2f lineStartPoint, ofVec2f lineEndPoint, ofVec2f inPoint, ofVec2f freePoint)
+{
+    float lambda;
+    float dist = distanceToLine(inPoint, lineStartPoint, lineEndPoint, &lambda);
+	
+    // check if projected point is between line end and start point
+    if (lambda > 0 && lambda < 1)
+    {
+        // if distance is short, make this combination the result
+        if (dist < recordDistance)
+        {
+            recordDistance = dist;
+            imagePoints[0] = lineStartPoint;
+            imagePoints[1] = lineEndPoint;
+            imagePoints[2] = inPoint;
+            imagePoints[3] = freePoint;
+        }
+    }
+}
 //--------------------------------------------------------------
 void testApp::setup()
 {
@@ -77,7 +110,8 @@ void testApp::update()
 }
 
 //--------------------------------------------------------------
-void testApp::draw(){
+void testApp::draw()
+{
     ofBackground(100, 100, 100);
 	
     ofSetHexColor(0xffffff);
@@ -97,17 +131,16 @@ void testApp::draw(){
 	cvFinder.draw();
     glPopMatrix();
 	
-    for (int i=0; i < cvFinder.blobs.size(); i++)
+	int sz = cvFinder.blobs.size();
+    for (int i=0; i < sz-1; i++)
 	{
-        char tempStr1[255];
-        sprintf(tempStr1, "x : %f\ny : %f", cvFinder.blobs[i].centroid.x, cvFinder.blobs[i].centroid.y);  
-        ofDrawBitmapString(tempStr1, 20, 250 + 100*i); //draw the string
+		ofLine(cvFinder.blobs[i].centroid.x, cvFinder.blobs[i].centroid.y, cvFinder.blobs[i+1].centroid.x, cvFinder.blobs[i+1].centroid.y);
     }
+	ofLine(cvFinder.blobs[sz-1].centroid.x, cvFinder.blobs[sz-1].centroid.y, cvFinder.blobs[0].centroid.x, cvFinder.blobs[0].centroid.y);
 }
 
 //--------------------------------------------------------------
 void testApp::keyPressed(int key){
-
 }
 
 //--------------------------------------------------------------

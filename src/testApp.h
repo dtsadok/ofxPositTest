@@ -16,6 +16,10 @@ class testApp : public ofBaseApp{
 	
 public:
 	
+	//from: http://channel9.msdn.com/coding4fun/articles/Wiimote-Virtual-Reality-Desktop
+	float distanceToLine(ofVec2f point, ofVec2f startLinePoint, ofVec2f endLinePoint, float *lambda);
+	void testPoints(ofVec2f lineStartPoint, ofVec2f lineEndPoint, ofVec2f onLinePoint, ofVec2f freePoint);
+	
 	void setup();
 	void update();
 	void draw();
@@ -54,9 +58,12 @@ public:
 	int briThresh;
 	int numBlobs;
 	int nPixels; //only need to compute once...
+	
+	//for POSIT
+	float recordDistance; //for line detection algorithm
+	ofVec2f imagePoints[4];
 
 	ofxCvGrayscaleImage trackedImg;
-	//color one;
 	unsigned char *colorTrackedPixels;
 	ofTexture trackedTexture;
 	ofxCvContourFinder cvFinder;
