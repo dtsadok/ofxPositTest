@@ -9,6 +9,7 @@
 #include "ofx3DModelLoader.h"
 //#include "ofxAssimpModelLoader.h"
 #include "ofxThreadedImageLoader.h"
+#include "Species.h"
 
 //#def _DEBUG 1
 #define	NUM_PARTICLES 1
@@ -20,6 +21,7 @@ class testApp : public ofBaseApp{
 public:
 	
 	//from: http://channel9.msdn.com/coding4fun/articles/Wiimote-Virtual-Reality-Desktop
+	float average(float *values, int sz);
 	float distanceToLine(ofVec2f point, ofVec2f startLinePoint, ofVec2f endLinePoint, float *lambda);
 	void testPoints(ofVec2f lineStartPoint, ofVec2f lineEndPoint, ofVec2f onLinePoint, ofVec2f freePoint);
 	
@@ -68,6 +70,9 @@ public:
 	//for POSIT
 	float recordDistance; //for line detection algorithm
 	ofVec2f imagePoints[4];
+	
+	//for smoothing
+	//vector<ofVec2f> last5Points;
 
 	ofxCvGrayscaleImage trackedImg;
 	unsigned char *colorTrackedPixels;

@@ -1,5 +1,17 @@
 #include "testApp.h"
 
+float testApp::average(float *values, int sz)
+{
+	float sum;
+	
+	for (int i=0; i < sz; i++)
+	{
+		sum += values[i];
+	}
+
+	return sum/sz;
+}
+
 //draw a line between startPoint and endPoint, and see if point is on that line
 float testApp::distanceToLine(ofVec2f point, ofVec2f startPoint, ofVec2f endPoint, float *lambda)
 {
@@ -36,7 +48,6 @@ void testApp::testPoints(ofVec2f lineStartPoint, ofVec2f lineEndPoint, ofVec2f i
 
 void testApp::initParticles()
 {
-	// ------------------------- Particles 2d Vbo
 	particleCount = 0;
 	for(int i=0; i<NUM_PARTICLES; i++) {
 		particlePos[i] = 0;
