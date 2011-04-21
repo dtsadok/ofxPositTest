@@ -60,6 +60,34 @@ void testApp::initParticles()
 	particleVbo.setVertexData(particlePos, NUM_PARTICLES, GL_DYNAMIC_DRAW);
 }
 
+void testApp::initVivarium(int numCreatures, int avgLifespan, int numSugars, int avgSugar)
+{
+	//create "sugarscape"
+	for (int i=0; i<numSugars; i++)
+	{
+		//get starting position somewhere inside unit sphere
+		//3 random numbers and normalize
+		ofVec3f *startPos = new ofVec3f(ofRandom(100), ofRandom(100), ofRandom(100));
+		startPos->normalize();
+		
+		int energy = avgSugar; //TODO: gaussian sugar distribution
+		sugarPackets.push_back(new SugarPacket(energy, startPos));
+	}
+
+	for (int i=0; i<numCreatures; i++)
+	{
+		int lifespan = avgLifespan; //TODO: gaussian lifespan distro
+		
+		//everyone start at bottom
+		ofVec3f *startPos = new ofVec3f(0, -1, 0);
+
+		ofVec3f *startVel = new ofVec3f(ofRandom(100), ofRandom(100), ofRandom(100));
+		startVel->normalize();
+
+		creatures.push_back(new Creature(lifespan, startPos, startVel));
+	}
+}
+
 //--------------------------------------------------------------
 void testApp::setup()
 {
@@ -90,9 +118,11 @@ void testApp::setup()
     colorTrackedPixels = new unsigned char[camWidth * camHeight];
     trackedTexture.allocate(camWidth, camHeight, GL_LUMINANCE);
 	
-	
     //vidGrabber.setVerbose(true);
-    vidGrabber.initGrabber(camWidth,camHeight);
+    //vidGrabber.initGrabber(camWidth,camHeight);
+	
+	//numCreatures, avgLifespan, numSugars, avgSugar
+	initVivarium(50, 1500, 25, 1000);
 }
 
 //--------------------------------------------------------------
@@ -134,6 +164,30 @@ void testApp::update()
 	//cvFinder.findContours(ofxCvGrayscaleImage input, int minArea, int maxArea, int nConsidered, bool bFindHoles, bool bUseApproximation)
 	cvFinder.findContours(trackedImg, 10, nPixels/10, numBlobs, false, true);
 	trackedTexture.loadData(colorTrackedPixels, camWidth, camHeight, GL_LUMINANCE);
+	
+	//every sugar packet pulls on every creature
+	for (int i = 0; i < sugarPackets.size(); i++)
+	{
+		if (sugarPackets.at(i) == NULL) continue;
+
+		for (int j = 0; j < creatures.size(); j++)
+		{
+			if (creatures[j])
+				creatures.at(j)->goTowards(sugarPackets.at(i));
+		}
+	}
+	
+	//every creature pulls on desperate creature
+	for (int i = 0; i < creatures.size(); i++)
+	{
+		if (creatures.at(i) == NULL) continue;
+
+		for (int j = 0; j < creatures.size(); j++)
+		{
+			if (creatures.at(j) && creatures.at(j)->desperate())
+				creatures.at(j)->goTowards(creatures.at(i));
+		}
+	}
 }
 
 //--------------------------------------------------------------

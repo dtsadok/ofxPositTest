@@ -16,10 +16,9 @@
 //500000
 
 
-class testApp : public ofBaseApp{
+class testApp : public ofBaseApp {
 	
 public:
-	
 	//from: http://channel9.msdn.com/coding4fun/articles/Wiimote-Virtual-Reality-Desktop
 	float average(float *values, int sz);
 	float distanceToLine(ofVec2f point, ofVec2f startLinePoint, ofVec2f endLinePoint, float *lambda);
@@ -93,5 +92,10 @@ public:
 	ofVec3f		particleVel[NUM_PARTICLES];
 	ofColor		particleColor[NUM_PARTICLES];
 	float		particleTime[NUM_PARTICLES];
-	ofVbo		particleVbo;	
+	ofVbo		particleVbo;
+	
+	//creatures
+	vector<SugarPacket *> sugarPackets;
+	vector<Creature *> creatures;
+	void initVivarium(int numCreatures, int avgLifespan, int numSugars, int avgSugar);
 };
