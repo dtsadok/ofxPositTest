@@ -35,7 +35,6 @@ public:
 	ofVec3f *pos;
 	int numCreatures; //creatures can team up as one
 
-	void tick();
 	//willing to cannibalize?
 	bool desperate();
 	int color(); //changes color with age

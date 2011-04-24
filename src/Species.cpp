@@ -12,11 +12,13 @@
 SugarPacket::SugarPacket(int energy, ofVec3f *start)
 {
 	this->energy = energy;
-	this->pos = start;  //ok in c++?
+	this->pos = start;
 }
 
 Creature::Creature(const int lifespan, ofVec3f *startPos, ofVec3f *startVel)
 {
+	alive = true; //helps
+
 	this->ttl = this->lifespan = lifespan;
 	pos = startPos;
 	vel = startVel;
@@ -27,6 +29,8 @@ Creature::Creature(const int lifespan, ofVec3f *startPos, ofVec3f *startVel)
 //(how many creatures in this LOC?)
 Creature::Creature(Creature *creature1, Creature *creature2)
 {
+	alive = true;
+
 	this->numCreatures = creature1->numCreatures + creature2->numCreatures;
 	this->ttl = creature1->ttl + creature2->ttl;
 	this->lifespan = creature1->lifespan + creature2->lifespan;
@@ -35,42 +39,52 @@ Creature::Creature(Creature *creature1, Creature *creature2)
 	this->pos = creature1->pos;
 	this->vel = creature2->vel;
 	
+	//don't need original creatures - we have one mega-creature
 	creature1->die();
 	creature2->die();
-}
-
-void Creature::tick() {
-	*pos += *vel;
-	ttl -= 1;
 }
 
 int Creature::color()
 {
 	//how dead are we?
 	//start turning red at middle-age...
-	float t = 2 * (float)ttl/(float)lifespan;
-	ofLerp(BLUE, RED, t);
+	float t = (float)ttl/(float)lifespan;
+	return ofLerp(RED, BLUE, t);
 }
 
 bool Creature::desperate()
 {
-	ttl <= lifespan/3;
+	return ttl <= lifespan/3;
 }
 
 //sugar packets pull on creature
 void Creature::goTowards(SugarPacket *sugar)
 {
-	ofVec3f f = this->pos - sugar->pos;
+	ofVec3f f = *(this->pos) - *(sugar->pos);
+	float len = f.length();
 	f.normalize();
-	*(this->vel) += f;
+
+	//distance effect reduces pull of vector
+	//so closer sugar packets have more effect
+	f/(len*len);
+
+	//but more sugar means more pull
+	//f *= sugar->energy;
+
+	//force of sugar now has effect on velocity of creature
+	*(this->pos) += f;
 }
 
-//sugar packets pull on creature
+//other creatures pull on creature (if creature is sufficiently hungry)
 void Creature::goTowards(Creature *creature)
 {
-	ofVec3f f = this->pos - creature->pos;
+	ofVec3f f = *(this->pos) - *(creature->pos);
+	float len = f.length();
 	f.normalize();
-	*(this->vel) += f;
+	f/(len*len);
+	//f *= creature->ttl;
+
+	*(this->pos) += f;
 }
 
 

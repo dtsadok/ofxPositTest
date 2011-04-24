@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ofMain.h"
+#include "ofx3DUtils.h"
 #include "ofxOpenCv.h"
 #include "ofxNetwork.h"
 #include "ofxOsc.h"
@@ -26,7 +27,10 @@ public:
 	
 	//from VBO example
 	void initParticles();
-	
+	void initGL();
+	void initCV();
+	void updateCritters();
+		
 	void setup();
 	void update();
 	void draw();
@@ -84,6 +88,12 @@ public:
 	ofxCvGrayscaleImage hueImg;
 	ofxCvGrayscaleImage satImg;
 	ofxCvGrayscaleImage briImg;
+	
+	ofxCamera camera;
+	
+	//for drawing spheres
+	GLUquadricObj *quadratic;
+	int sphere;
 	
 	//from VBO example
 	// particles

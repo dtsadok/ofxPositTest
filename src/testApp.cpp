@@ -67,7 +67,7 @@ void testApp::initVivarium(int numCreatures, int avgLifespan, int numSugars, int
 	{
 		//get starting position somewhere inside unit sphere
 		//3 random numbers and normalize
-		ofVec3f *startPos = new ofVec3f(ofRandom(100), ofRandom(100), ofRandom(100));
+		ofVec3f *startPos = new ofVec3f(ofRandom(-100, 100), ofRandom(-100, 100), ofRandom(-100, 100));
 		startPos->normalize();
 		
 		int energy = avgSugar; //TODO: gaussian sugar distribution
@@ -81,11 +81,91 @@ void testApp::initVivarium(int numCreatures, int avgLifespan, int numSugars, int
 		//everyone start at bottom
 		ofVec3f *startPos = new ofVec3f(0, -1, 0);
 
+		//ok that it's 100 because we are normalizing
 		ofVec3f *startVel = new ofVec3f(ofRandom(100), ofRandom(100), ofRandom(100));
 		startVel->normalize();
+		*startVel /= 100.0f; //slow down, dude
 
 		creatures.push_back(new Creature(lifespan, startPos, startVel));
 	}
+}
+
+//GL specific settings
+void testApp::initGL()
+{
+	glEnable(GL_DEPTH_TEST);
+
+	//GLUquadricObj *
+	quadratic = gluNewQuadric();
+	gluQuadricNormals(quadratic, GLU_SMOOTH);
+	//gluQuadricDrawStyle(quadratic, GLU_FILL);
+
+	/*
+	//Making a display list to draw sphere
+	//http://www.opengl.org/wiki/Texturing_a_Sphere
+	sphere = glGenLists(1);
+	glNewList(sphere, GL_COMPILE);
+	gluSphere(quadratic, 1.0, 20, 20);
+	glEndList();
+	*/
+	gluDeleteQuadric(quadratic);
+}
+
+void testApp::updateCritters()
+{
+	for (int i = 0; i < sugarPackets.size(); i++)
+	{
+		if (!sugarPackets.at(i)) continue;
+		
+		//every sugar packet pulls on every creature
+		for (int j = 0; j < creatures.size(); j++)
+		{
+			if (creatures[j])
+				creatures.at(j)->goTowards(sugarPackets.at(i));
+		}
+	}
+
+	//iterate thru creatures
+	for (int i = 0; i < creatures.size(); i++)
+	{
+		//TODO: prune creatures
+		if (creatures.at(i) && creatures.at(i)->alive)
+		{			
+			//every creature pulls on desperate creature
+			for (int j = 0; j < creatures.size(); j++)
+			{
+				if (creatures.at(j) && creatures.at(j)->desperate() && creatures.at(j)->alive)
+					creatures.at(j)->goTowards(creatures.at(i));
+			}
+			
+			//update creature position
+			//*(creatures.at(i)->pos) += *(creatures.at(i)->vel);
+			
+			//if timer % tick time == 0
+			//creatures.at(i)->ttl -= 1;
+			if (creatures.at(i)->ttl <= 0) creatures.at(i)->die();
+		}
+		//else {} //remove dead creatures from list - need better iter
+	}
+}
+
+void testApp::initCV()
+{
+	//how bright is bright
+	briThresh = 150;
+	
+	//how many blobs are we expecting?
+	numBlobs = 3;
+	
+	//openCV buffers
+	colorImg.allocate(camWidth, camHeight);
+	colorImgHSV.allocate(camWidth, camHeight);
+	hueImg.allocate(camWidth, camHeight);
+	satImg.allocate(camWidth, camHeight);
+	briImg.allocate(camWidth, camHeight);
+	trackedImg.allocate(camWidth, camHeight);
+	colorTrackedPixels = new unsigned char[camWidth * camHeight];
+	trackedTexture.allocate(camWidth, camHeight, GL_LUMINANCE);
 }
 
 //--------------------------------------------------------------
@@ -101,28 +181,19 @@ void testApp::setup()
 	nPixels = camWidth * camHeight;
 	
 	ofSetWindowShape(camWidth, camHeight);
-	
-	//how bright is bright
-	briThresh = 150;
-	
-	//how many blobs are we expecting?
-	numBlobs = 3;
-	
-	//openCV buffers
-    colorImg.allocate(camWidth, camHeight);
-	colorImgHSV.allocate(camWidth, camHeight);
-    hueImg.allocate(camWidth, camHeight);
-    satImg.allocate(camWidth, camHeight);
-    briImg.allocate(camWidth, camHeight);
-    trackedImg.allocate(camWidth, camHeight);
-    colorTrackedPixels = new unsigned char[camWidth * camHeight];
-    trackedTexture.allocate(camWidth, camHeight, GL_LUMINANCE);
-	
+		
     //vidGrabber.setVerbose(true);
     //vidGrabber.initGrabber(camWidth,camHeight);
-	
+
 	//numCreatures, avgLifespan, numSugars, avgSugar
-	initVivarium(50, 1500, 25, 1000);
+	initVivarium(50, 120, 25, 40);
+	
+	initCV();
+	initGL();
+
+	ofSetupScreen();
+
+	ofBackgroundHex(0x333333, 1.0);
 }
 
 //--------------------------------------------------------------
@@ -165,37 +236,20 @@ void testApp::update()
 	cvFinder.findContours(trackedImg, 10, nPixels/10, numBlobs, false, true);
 	trackedTexture.loadData(colorTrackedPixels, camWidth, camHeight, GL_LUMINANCE);
 	
-	//every sugar packet pulls on every creature
-	for (int i = 0; i < sugarPackets.size(); i++)
-	{
-		if (sugarPackets.at(i) == NULL) continue;
-
-		for (int j = 0; j < creatures.size(); j++)
-		{
-			if (creatures[j])
-				creatures.at(j)->goTowards(sugarPackets.at(i));
-		}
-	}
-	
-	//every creature pulls on desperate creature
-	for (int i = 0; i < creatures.size(); i++)
-	{
-		if (creatures.at(i) == NULL) continue;
-
-		for (int j = 0; j < creatures.size(); j++)
-		{
-			if (creatures.at(j) && creatures.at(j)->desperate())
-				creatures.at(j)->goTowards(creatures.at(i));
-		}
-	}
+	//updateCritters();
 }
 
 //--------------------------------------------------------------
 void testApp::draw()
 {
-    ofBackground(100, 100, 100);
-	
     ofSetHexColor(0xffffff);
+	
+	//gluLookAt(0, 0, -1,
+	//		  ofGetWidth()/2, ofGetHeight()/2, 0,
+	//		  0, 1, 0);
+	
+
+	/*	
     //vidGrabber.draw(0, 0);
 	inputImage.draw(0, 0);
 	
@@ -225,6 +279,61 @@ void testApp::draw()
 	particleVbo.setVertexData(particlePos, NUM_PARTICLES, GL_DYNAMIC_DRAW);
 	// and draw
 	particleVbo.draw(GL_POINTS, 0, NUM_PARTICLES);
+	*/
+	
+	//draw creatures
+	ofPushMatrix();
+	//ofTranslate(0, 0, -50); //move camera back
+
+	//put 0,0,0 at center of the screen
+	ofTranslate(ofGetWidth()/2, ofGetHeight()/2, -50);
+	//ofScale(0, -1, 0); //flip y coordinates - don't work for sum reason...
+	ofScale(25, 25, 25); //each 1.0 unit is now ~25px (i think :-)
+	
+	ofPushStyle();
+	//ofSphere(0, 0, 0, 0.2);
+	//ofSphere(1, 0, 0, 0.2);
+	//ofSphere(0, -1, 0, 0.2);
+
+	for (int i = 0; i < sugarPackets.size(); i++)
+	{
+		if (!sugarPackets.at(i)) continue;
+		
+		ofPushMatrix();
+		ofVec3f *pos = sugarPackets.at(i)->pos;
+		
+		//draw sumthin' - sugar cubes?
+		ofSetHexColor(0xffffff);
+		float f = 10;
+		ofSphere(f*pos->x, f*pos->y, f*pos->z, 0.2);
+		
+		ofPopMatrix();
+	}
+
+	for (int i = 0; i < creatures.size(); i++)
+	{
+		if (creatures.at(i) == NULL || creatures.at(i)->alive == false) continue;
+
+		ofPushStyle();
+
+		ofVec3f *pos = creatures.at(i)->pos;
+		ofSetHexColor(creatures.at(i)->color());
+		//ofSetHexColor(0xffffff);
+
+		float f = 1;
+		ofSphere(f*pos->x, f*pos->y, f*pos->z, 1.0);
+		
+		/*
+		for (int j=0; j < creatures.size(); j++)
+		{
+			if (creatures.at(j) == NULL || creatures.at(j)->alive == false) continue;
+			//draw 3d line between i and j
+		}
+		 */
+
+		ofPopStyle();
+	}
+	ofPopMatrix();
 }
 
 //--------------------------------------------------------------
